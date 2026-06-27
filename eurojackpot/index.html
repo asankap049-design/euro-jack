@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0d14">
+<title>EuroJackpot Co-Occurrence Tracker</title>
+<style>
+  :root{
+    --bg:#0b0d14; --panel:#141826; --panel2:#1d2336; --line:#2a3147;
+    --txt:#eef1f8; --dim:#7a85a3; --sel:#ffb52e; --co:#ff4d6d; --ok:#36d399;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  html{-webkit-text-size-adjust:100%;}
+  body{padding-bottom:90px;background:var(--bg);color:var(--txt);
+    font-family:'SF Mono',ui-monospace,'Roboto Mono',Menlo,monospace;
+    padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    line-height:1.4;max-width:560px;margin:0 auto;overscroll-behavior:none;}
+  .eyebrow{font-size:9px;letter-spacing:3px;font-weight:700;color:var(--sel);text-transform:uppercase;}
+  h1{font-size:clamp(19px,6vw,22px);font-weight:800;letter-spacing:-0.4px;margin:5px 0 4px;}
+  .sub{font-size:11px;color:var(--dim);}
+  .statwrap{position:sticky;top:0;z-index:10;padding:10px 0 8px;
+    background:linear-gradient(180deg,var(--bg) 70%,rgba(11,13,20,0));}
+  .statline{padding:11px 13px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;font-size:12px;min-height:46px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .statline b{color:var(--sel);} .statline .co{color:var(--co);font-weight:700;}
+  .clearbtn{margin-top:8px;width:100%;padding:11px;border:1px solid rgba(255,77,109,.3);background:var(--panel);
+    color:var(--co);border-radius:10px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  .clearbtn:active{transform:scale(.98);}
+
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(6px,1.8vw,9px);}
+  .cell{position:relative;aspect-ratio:1;border-radius:13px;border:1px solid var(--line);
+    background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .08s, background .15s, border-color .15s;user-select:none;}
+  .cell:active{transform:scale(.91);}
+  .cell .n{font-size:clamp(15px,4.6vw,18px);font-weight:800;line-height:1;}
+  .cell .c{font-size:clamp(8px,2.4vw,10px);color:var(--dim);margin-top:3px;height:11px;line-height:1;}
+  /* selected */
+  .cell.sel{background:linear-gradient(145deg,#ffc24d,#f0a020);border-color:#ffd87a;color:#1a1000;
+    box-shadow:0 0 16px rgba(255,181,46,.45);}
+  .cell.sel .c{color:#5a3d00;}
+  /* co-occurrence heat (when selection active) */
+  .cell.h0{opacity:.32;}
+  .cell.h1{background:rgba(255,77,109,.12);}
+  .cell.h2{background:rgba(255,77,109,.26);}
+  .cell.h3{background:rgba(255,77,109,.44);border-color:rgba(255,77,109,.5);}
+  .cell.h4{background:rgba(255,77,109,.66);border-color:rgba(255,77,109,.7);color:#fff;}
+  .cell.h5{background:rgba(255,77,109,.88);border-color:#ff4d6d;color:#fff;}
+  .cell.h4 .c,.cell.h5 .c{color:rgba(255,255,255,.85);}
+
+  .hint{font-size:10px;color:var(--dim);margin-top:14px;line-height:1.6;
+    padding:11px;background:var(--panel);border-radius:9px;border:1px solid var(--line);}
+  .hint b{color:var(--txt);}
+  .drawlist{margin-top:12px;}
+  .drawlist summary{font-size:11px;color:var(--sel);cursor:pointer;padding:8px 0;font-weight:700;}
+  .draw{font-size:11px;color:var(--dim);padding:3px 0;font-variant-numeric:tabular-nums;border-bottom:1px solid #161b2a;}
+  .draw b{color:var(--txt);}
+  .foot{margin-top:18px;font-size:9px;color:var(--dim);text-align:center;}
+  .navlink{display:flex;gap:5px;margin-top:18px;flex-wrap:wrap;}
+  .navlink a{flex:1;text-align:center;padding:11px 1px;border-radius:9px;border:1px solid var(--line);
+    text-decoration:none;font-size:12px;font-weight:700;transition:transform .08s;}
+  .navlink a:active{transform:scale(.98);}
+  .navlink a.active{background:var(--panel2);color:var(--sel);border-color:var(--sel);}
+  .navlink a.alt{background:var(--panel);color:var(--dim);}
+  .navlink a.alt .ic{color:#9b6dff;}
+
+  /* New Premium Bottom Nav */
+  /* New Premium Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 24, 38, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+    z-index: 1000;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #7a85a3;
+    font-size: 9px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    gap: 4px;
+    min-width: 44px;
+  }
+  .nav-item .icon {
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+  .nav-item:active {
+    transform: scale(0.92);
+  }
+  .nav-item.active {
+    color: #ffb52e;
+  }
+  .nav-item.active .icon {
+    background: rgba(255, 181, 46, 0.15);
+    color: #ffb52e;
+    box-shadow: 0 0 15px rgba(255, 181, 46, 0.1);
+  }
+
+
+  .sin-hint {
+    background: rgba(255, 181, 46, 0.08);
+    border: 1px solid rgba(255, 181, 46, 0.2);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 24px 0 30px;
+    font-size: 12px;
+    color: #eef1f8;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .sin-hint b {
+    color: #ffb52e;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+</style>
+</head>
+<body>
+  <div class="eyebrow">EuroJackpot · Co-Occurrence</div>
+  <h1>Number Tracker</h1>
+  <div class="sub">Tap a number to see which others were drawn with it. Add more to narrow.</div>
+
+  <div class="statwrap">
+    <div class="statline" id="stat">Tap any number to start.</div>
+    <button class="clearbtn" id="clearbtn" onclick="clearAll()" style="display:none">Clear all</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="hint" id="hint">
+    <b>How it works:</b> select 1 number — every other cell shows how many times it appeared in the <b>same draw</b> as your pick, and lights up (brighter = more often). Select a 2nd and 3rd — the board re-counts using only draws that contain <b>all</b> your picks. The gold cells are your selection; red heat is the company they keep.
+  </div>
+
+  <details class="drawlist" id="dl" style="display:none">
+    <summary id="dlsum">Matching draws</summary>
+    <div id="dlbody"></div>
+  </details>
+
+  
+
+  
+  
+  
+  <div class="sin-hint">
+    <b>මේ Tool එකෙන් වෙන්නේ කුමක්ද?</b>
+    මෙම ටූල් එක මගින් ප්‍රධාන අංක 1 සිට 50 දක්වා ඔබ තෝරන අංක සමග ඉතිහාසයේ වැඩිපුරම දිනා ඇති අනෙකුත් අංක මොනවාදැයි පෙන්වයි. අංකයක් මත Click කර බලන්න.
+  </div>
+  <div class="bottom-nav">
+    <a href="../index.html" class="nav-item">
+      <span class="icon">🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="index.html" class="nav-item active">
+      <span class="icon">🔢</span>
+      <span>Main</span>
+    </a>
+    <a href="euro.html" class="nav-item ">
+      <span class="icon">🇪🇺</span>
+      <span>Euro</span>
+    </a>
+    <a href="grid.html" class="nav-item ">
+      <span class="icon">⬜</span>
+      <span>Grid</span>
+    </a>
+    <a href="position.html" class="nav-item ">
+      <span class="icon">📍</span>
+      <span>Pos</span>
+    </a>
+    <a href="oddeven.html" class="nav-item ">
+      <span class="icon">⚖️</span>
+      <span>O/E</span>
+    </a>
+    <a href="total.html" class="nav-item ">
+      <span class="icon">📊</span>
+      <span>Total</span>
+    </a>
+  </div>
+  
+  <div class="foot">456 draws · 2022-01-07 → 2026-06-26 · co-occurrence is descriptive, not predictive</div>
+
+<script type="module">
+    const res = await fetch('/api/draws', {
+    headers: {
+      'x-coupon-code': localStorage.getItem('couponCode') || '',
+      'x-session-token': localStorage.getItem('sessionToken') || ''
+    }
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('couponCode');
+    localStorage.removeItem('sessionToken');
+    window.location.href = 'login.html';
+  }
+  const EUROJACKPOT_DATA = await res.json();
+  const DRAWS_MAIN_ONLY = EUROJACKPOT_DATA.map(x => x.n);
+  const DRAWS = DRAWS_MAIN_ONLY;
+  const EURO = EUROJACKPOT_DATA.filter(x => x.e).map(x => ({ d: x.d, e: x.e }));
+
+let selected = [];
+
+const grid = document.getElementById('grid');
+const cells = {};
+for(let n=1;n<=50;n++){
+  const c=document.createElement('div');
+  c.className='cell';
+  c.innerHTML=`<span class="n">${n}</span><span class="c"></span>`;
+  c.onclick=()=>toggle(n);
+  grid.appendChild(c);
+  cells[n]=c;
+}
+
+function toggle(n){
+  const i=selected.indexOf(n);
+  if(i>=0) selected.splice(i,1);
+  else selected.push(n);
+  render();
+}
+function clearAll(){ selected=[]; render(); }
+
+function render(){
+  // matching draws = draws containing ALL selected
+  let matching = DRAWS;
+  if(selected.length){
+    matching = DRAWS.filter(d=> selected.every(s=>d.includes(s)));
+  }
+  // co-occurrence counts for non-selected numbers
+  const co={}; for(let n=1;n<=50;n++) co[n]=0;
+  if(selected.length){
+    for(const d of matching) for(const n of d) if(!selected.includes(n)) co[n]++;
+  }
+  const maxco = Math.max(1, ...Object.values(co));
+
+  for(let n=1;n<=50;n++){
+    const cell=cells[n];
+    cell.className='cell';
+    const cspan=cell.querySelector('.c');
+    if(selected.includes(n)){
+      cell.classList.add('sel');
+      cspan.textContent='✓';
+    } else if(selected.length){
+      const v=co[n];
+      let h;
+      if(v===0) h=0;
+      else { const r=v/maxco; h = r>=.85?5 : r>=.65?4 : r>=.45?3 : r>=.25?2 : 1; }
+      cell.classList.add('h'+h);
+      cspan.textContent = v>0? v : '·';
+    } else {
+      cspan.textContent='';
+    }
+  }
+
+  // stat line
+  const stat=document.getElementById('stat');
+  document.getElementById('clearbtn').style.display = selected.length? 'block':'none';
+  if(!selected.length){
+    stat.innerHTML='Tap any number to start.';
+  } else {
+    // top co-occurring
+    const ranked=[...Array(51).keys()].filter(n=>n>=1&&!selected.includes(n)&&co[n]>0).sort((a,b)=>co[b]-co[a]);
+    const top=ranked.slice(0,5).map(n=>`<span class="co">${n}</span>(${co[n]})`).join('  ');
+    stat.innerHTML=`Selected <b>${selected.sort((a,b)=>a-b).join(', ')}</b> · found in <b>${matching.length}</b> of ${DRAWS.length} draws.` +
+      (ranked.length? `<br>Top partners: ${top}` : '<br>No other numbers share these draws.');
+  }
+
+  // draw list
+  const dl=document.getElementById('dl');
+  if(selected.length){
+    dl.style.display='block';
+    document.getElementById('dlsum').textContent=`Matching draws (${matching.length})`;
+    document.getElementById('dlbody').innerHTML = matching.slice(0,60).map(d=>{
+      const html=d.slice().sort((a,b)=>a-b).map(n=>selected.includes(n)?`<b>${n}</b>`:n).join(' · ');
+      return `<div class="draw">${html}</div>`;
+    }).join('') + (matching.length>60?`<div class="draw">… and ${matching.length-60} more</div>`:'');
+  } else {
+    dl.style.display='none';
+  }
+}
+render();
+
+window.clearAll = clearAll;
+</script>
+</body>
+</html>

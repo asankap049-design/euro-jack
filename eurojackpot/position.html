@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0d14">
+<title>EuroJackpot Row/Line Matrix</title>
+<style>
+  :root{--bg:#0b0d14;--panel:#141826;--panel2:#1d2336;--line:#2a3147;
+    --txt:#eef1f8;--dim:#7a85a3;--row:#4ea3ff;--lin:#36d399;--acc:#ffb52e;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  html{-webkit-text-size-adjust:100%;}
+  body{padding-bottom:90px;background:var(--bg);color:var(--txt);font-family:'SF Mono',ui-monospace,'Roboto Mono',Menlo,monospace;
+    padding:calc(14px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+    line-height:1.4;max-width:620px;margin:0 auto;overscroll-behavior-y:none;}
+  .eyebrow{font-size:9px;letter-spacing:3px;font-weight:700;color:var(--acc);text-transform:uppercase;}
+  h1{font-size:clamp(19px,6vw,22px);font-weight:800;letter-spacing:-0.4px;margin:5px 0 4px;}
+  .sub{font-size:11px;color:var(--dim);}
+  .toggle{display:flex;gap:6px;margin:14px 0 8px;}
+  .toggle button{flex:1;padding:11px;border:1px solid var(--line);background:var(--panel);color:var(--dim);
+    border-radius:10px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+  .toggle button.active.row{background:linear-gradient(135deg,#4ea3ff,#2d6fb0);color:#fff;border-color:transparent;}
+  .toggle button.active.lin{background:linear-gradient(135deg,#36d399,#1f8a5e);color:#04261a;border-color:transparent;}
+  .selector{display:flex;gap:6px;margin:0 0 8px;}
+  .selector button{flex:1;padding:8px 2px;border:1px solid var(--line);background:var(--panel);color:var(--dim);
+    border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+  .selector button.active{background:var(--panel2);color:var(--acc);border-color:var(--acc);}
+
+  .statline{padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    font-size:11.5px;min-height:42px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .statline b{color:var(--acc);} .statline .ok{color:var(--row);font-weight:700;}
+  .statline.lin .ok{color:var(--lin);}
+  .clearbtn{margin-bottom:8px;width:100%;padding:9px;border:1px solid rgba(255,77,109,.3);background:var(--panel);color:#ff4d6d;border-radius:9px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+  .tip{font-size:10px;color:var(--dim);margin:0 2px 8px;}
+
+  .matrixwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);-webkit-overflow-scrolling:touch;}
+  table.mx{border-collapse:collapse;}
+  table.mx td,table.mx th{padding:0;text-align:center;}
+  .lblcol{position:sticky;left:0;z-index:3;background:var(--panel2);min-width:36px;width:36px;
+    font-size:11px;font-weight:800;color:var(--dim);border-right:2px solid var(--line);cursor:pointer;}
+  thead .lblcol{z-index:4;}
+  .lblcol.sel{color:#1a1000;background:linear-gradient(145deg,#ffd87a,#f0a020);}
+  .datecell{font-size:8px;color:var(--dim);padding:6px 0 5px;min-width:34px;width:34px;
+    writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;height:46px;border-bottom:1px solid var(--line);}
+  .datecell.newest{color:var(--acc);}
+  .datecell.matchcol{color:#1a1000;background:var(--acc);font-weight:800;}
+  .cell{min-width:34px;width:34px;height:32px;border-right:1px solid #10131e;border-bottom:1px solid #10131e;position:relative;background:transparent;}
+  .cell.hit-row{background:radial-gradient(circle at 50% 40%,#5fb0ff,#2d6fb0);}
+  .cell.hit-lin{background:radial-gradient(circle at 50% 40%,#43e0a8,#1f8a5e);}
+  .cell .nin{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;font-size:11px;font-weight:800;color:#fff;line-height:1.05;}
+  .cell.hit-lin .nin{color:#04261a;}
+  .cell .nin small{font-size:9px;font-weight:800;opacity:.92;}
+  .cell.dim{opacity:.18;}
+  .cell.matchcol{box-shadow:inset 0 0 0 2px var(--acc);}
+  .lblcol.rowlbl{line-height:32px;}
+
+  .section-title{font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;margin:18px 4px 8px;text-transform:uppercase;}
+  .dl{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px 12px;max-height:320px;overflow-y:auto;}
+  .drow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #161b2a;font-size:12px;}
+  .drow:last-child{border:none;}
+  .drow .dt{color:var(--dim);font-size:10px;min-width:74px;font-variant-numeric:tabular-nums;}
+  .nb{width:23px;height:23px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:var(--panel2);color:var(--dim);}
+  .nb.on{background:linear-gradient(145deg,#ffd87a,#f0a020);color:#1a1000;}
+
+  .navlink{display:flex;gap:5px;margin-top:18px;flex-wrap:wrap;}
+  .navlink a{flex:1;min-width:48px;text-align:center;padding:10px 1px;border-radius:9px;border:1px solid var(--line);text-decoration:none;font-size:9.5px;font-weight:700;transition:transform .08s;}
+  .navlink a:active{transform:scale(.98);}
+  .navlink a.active{background:var(--panel2);color:var(--acc);border-color:var(--acc);}
+  .navlink a.alt{background:var(--panel);color:var(--dim);}
+  .foot{margin-top:14px;font-size:9px;color:var(--dim);text-align:center;line-height:1.5;}
+
+  /* New Premium Bottom Nav */
+  /* New Premium Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 24, 38, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+    z-index: 1000;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #7a85a3;
+    font-size: 9px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    gap: 4px;
+    min-width: 44px;
+  }
+  .nav-item .icon {
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+  .nav-item:active {
+    transform: scale(0.92);
+  }
+  .nav-item.active {
+    color: #ffb52e;
+  }
+  .nav-item.active .icon {
+    background: rgba(255, 181, 46, 0.15);
+    color: #ffb52e;
+    box-shadow: 0 0 15px rgba(255, 181, 46, 0.1);
+  }
+
+
+  .sin-hint {
+    background: rgba(255, 181, 46, 0.08);
+    border: 1px solid rgba(255, 181, 46, 0.2);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 24px 0 30px;
+    font-size: 12px;
+    color: #eef1f8;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .sin-hint b {
+    color: #ffb52e;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+</style>
+</head>
+<body>
+  <div class="eyebrow">EuroJackpot · Row / Line Matrix</div>
+  <h1>Position Matrix</h1>
+  <div class="sub">Each column is one draw. Tap a row/line label (left) to find that pattern in history.</div>
+
+  <div class="toggle">
+    <button class="row active" data-mode="row" onclick="setMode('row')">● Rows 1–10</button>
+    <button class="lin" data-mode="lin" onclick="setMode('lin')">● Lines 1–5</button>
+  </div>
+  <div class="selector" id="sel"></div>
+
+  <div class="statline" id="stat">Tap row labels (R1–R10) on the left to select a pattern.</div>
+  <button class="clearbtn" id="clearbtn" onclick="clearSel()" style="display:none">Clear pattern</button>
+  <div class="tip">← newest left · scroll right for older · tap labels to mark (max 5)</div>
+
+  <div class="matrixwrap"><table class="mx" id="mx"></table></div>
+
+  <div class="section-title" id="dltitle" style="display:none">Past results with this pattern</div>
+  <div class="dl" id="dl" style="display:none"></div>
+
+  
+  
+  
+  
+  <div class="sin-hint">
+    <b>මේ Tool එකෙන් වෙන්නේ කුමක්ද?</b>
+    දිනුම් පතෙහි ඇති පේළි (Rows 1-10) සහ තීරු (Lines 1-5) අනුව පසුගිය ප්‍රතිඵල විශ්ලේෂණය කරයි. පේළියක නමක් (උදා: R1) මත Click කර එහි ඉතිහාසය බලන්න.
+  </div>
+  <div class="bottom-nav">
+    <a href="../index.html" class="nav-item">
+      <span class="icon">🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="index.html" class="nav-item ">
+      <span class="icon">🔢</span>
+      <span>Main</span>
+    </a>
+    <a href="euro.html" class="nav-item ">
+      <span class="icon">🇪🇺</span>
+      <span>Euro</span>
+    </a>
+    <a href="grid.html" class="nav-item ">
+      <span class="icon">⬜</span>
+      <span>Grid</span>
+    </a>
+    <a href="position.html" class="nav-item active">
+      <span class="icon">📍</span>
+      <span>Pos</span>
+    </a>
+    <a href="oddeven.html" class="nav-item ">
+      <span class="icon">⚖️</span>
+      <span>O/E</span>
+    </a>
+    <a href="total.html" class="nav-item ">
+      <span class="icon">📊</span>
+      <span>Total</span>
+    </a>
+  </div>
+  
+  <div class="foot" id="foot"></div>
+
+<script type="module">
+    const res = await fetch('/api/draws', {
+    headers: {
+      'x-coupon-code': localStorage.getItem('couponCode') || '',
+      'x-session-token': localStorage.getItem('sessionToken') || ''
+    }
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('couponCode');
+    localStorage.removeItem('sessionToken');
+    window.location.href = 'login.html';
+  }
+  const EUROJACKPOT_DATA = await res.json();
+  const DRAWS_MAIN_ONLY = EUROJACKPOT_DATA.map(x => x.n);
+  const DRAWS = EUROJACKPOT_DATA.map(x => ({ d: x.d, n: x.n }));
+  const EURO = EUROJACKPOT_DATA.filter(x => x.e).map(x => ({ d: x.d, e: x.e }));
+
+const windows=[10,20,30,50,100,DRAWS.length];
+const labels={10:'10',20:'20',30:'30',50:'50',100:'100',[DRAWS.length]:'All'};
+let active=20, mode='row';
+let selRow=new Set(), selLin=new Set();
+const rowOf=n=>Math.floor((n-1)/5)+1;
+const lineOf=n=>((n-1)%5)+1;
+
+const sel=document.getElementById('sel');
+windows.forEach(w=>{const b=document.createElement('button');b.textContent=labels[w];b.dataset.w=w;
+  if(w===active)b.classList.add('active');
+  b.onclick=()=>{active=w;[...sel.children].forEach(c=>c.classList.toggle('active',+c.dataset.w===w));render();};
+  sel.appendChild(b);});
+
+function setMode(m){ mode=m;
+  document.querySelectorAll('.toggle button').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  render(); }
+function curSel(){ return mode==='row'?selRow:selLin; }
+function toggleLabel(k){ const s=curSel(); if(s.has(k))s.delete(k); else { if(s.size>=5)return; s.add(k);} render(); }
+function clearSel(){ curSel().clear(); render(); }
+
+function render(){
+  const win=DRAWS.slice(0,active);
+  const count=mode==='row'?10:5;
+  const fn=mode==='row'?rowOf:lineOf;
+  const hitClass=mode==='row'?'hit-row':'hit-lin';
+  const lbl=mode==='row'?'R':'L';
+  const S=curSel();
+  const drawMatches=d=>[...S].every(k=>d.n.some(n=>fn(n)===k));
+
+  // header
+  let head='<thead><tr><th class="lblcol">'+(mode==='row'?'ROW':'LINE')+'</th>';
+  win.forEach((d,i)=>{ const mc=S.size&&drawMatches(d)?'matchcol':''; 
+    head+=`<th class="datecell ${i===0?'newest':''} ${mc}">${d.d.slice(5)}</th>`; });
+  head+='</tr></thead>';
+
+  // body
+  let body='<tbody>';
+  for(let k=1;k<=count;k++){
+    const isSel=S.has(k);
+    body+=`<tr><td class="lblcol rowlbl ${isSel?'sel':''}" onclick="toggleLabel(${k})">${lbl}${k}</td>`;
+    for(const d of win){
+      const nums=d.n.filter(n=>fn(n)===k).sort((a,b)=>a-b);
+      const mc=S.size&&drawMatches(d)?'matchcol':'';
+      const dimd=S.size&&!isSel?'dim':'';
+      if(nums.length>0){
+        const inner=nums.length===1?`<span class="nin">${nums[0]}</span>`:`<span class="nin">${nums.map(x=>`<small>${x}</small>`).join('')}</span>`;
+        body+=`<td class="cell ${hitClass} ${mc} ${dimd}">${inner}</td>`;
+      } else body+=`<td class="cell ${mc} ${dimd}"></td>`;
+    }
+    body+='</tr>';
+  }
+  body+='</tbody>';
+  document.getElementById('mx').innerHTML=head+body;
+
+  // stat + matching list (search FULL history)
+  const stat=document.getElementById('stat');
+  stat.className='statline'+(mode==='lin'?' lin':'');
+  document.getElementById('clearbtn').style.display=S.size?'block':'none';
+  const dl=document.getElementById('dl'), dlt=document.getElementById('dltitle');
+  if(!S.size){
+    stat.innerHTML=`Tap ${mode==='row'?'row (R1–R10)':'line (L1–L5)'} labels on the left to select a pattern.`;
+    dl.style.display='none'; dlt.style.display='none';
+  } else {
+    const allMatches=DRAWS.filter(drawMatches);
+    const picks=[...S].sort((a,b)=>a-b).map(k=>lbl+k).join(' · ');
+    stat.innerHTML=`Pattern <b>${picks}</b> · found in <span class="ok">${allMatches.length}</span> of ${DRAWS.length} draws (all history).`;
+    dl.style.display='block'; dlt.style.display='block';
+    dlt.textContent=`Past results with ${picks} (${allMatches.length})`;
+    dl.innerHTML=allMatches.map(d=>{
+      const balls=d.n.slice().sort((a,b)=>a-b).map(n=>`<span class="nb ${S.has(fn(n))?'on':''}">${n}</span>`).join('');
+      return `<div class="drow"><span class="dt">${d.d}</span>${balls}</div>`;
+    }).join('');
+  }
+}
+document.getElementById('foot').textContent=`${DRAWS.length} draws · ${DRAWS[DRAWS.length-1].d} → ${DRAWS[0].d}`;
+render();
+
+window.setMode = setMode;
+window.clearSel = clearSel;
+window.toggleLabel = toggleLabel;
+</script>
+</body>
+</html>

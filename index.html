@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0b0d14">
+  <title>Lottery Analytical Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0d14;
+      --bg-panel: rgba(20, 24, 38, 0.7);
+      --bg-card: rgba(29, 35, 54, 0.8);
+      --line: #2a3147;
+      --txt-main: #eef1f8;
+      --txt-dim: #7a85a3;
+      --accent: #ffb52e;
+      --accent-grad: linear-gradient(135deg, #ffc24d, #f0a020);
+      --hit: #ff4d6d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(255, 181, 46, 0.05), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(255, 77, 109, 0.05), transparent 25%);
+      color: var(--txt-main);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: calc(40px + env(safe-area-inset-top)) 20px 40px;
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 4px;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(255, 181, 46, 0.1);
+      border-radius: 20px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 8vw, 48px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      background: linear-gradient(to right, #ffffff, #a0abc0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      font-size: clamp(14px, 4vw, 18px);
+      color: var(--txt-dim);
+      font-weight: 300;
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      width: 100%;
+      max-width: 1000px;
+      padding: 0 10px;
+    }
+
+    .card {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 32px;
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+      animation: fadeInUp 0.8s ease-out backwards;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 4px;
+      background: var(--accent-grad);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: rgba(255, 181, 46, 0.5);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(255, 181, 46, 0.1);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .card.active .card-icon {
+      background: var(--accent-grad);
+      color: #1a1000;
+      box-shadow: 0 0 20px rgba(255, 181, 46, 0.3);
+      border: none;
+    }
+
+    .card h2 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      color: var(--txt-dim);
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 300;
+      margin-bottom: 24px;
+      flex-grow: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .card.active .card-footer {
+      color: var(--accent);
+    }
+
+    .card.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: rgba(122, 133, 163, 0.2);
+      color: var(--txt-dim);
+    }
+
+    .arrow {
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    /* Animations */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bg-elements {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      overflow: hidden;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.15;
+    }
+
+    .glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--accent); }
+    .glow-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: var(--hit); }
+
+  </style>
+</head>
+<body>
+
+  <div class="bg-elements">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+  </div>
+
+  <header>
+    <div class="eyebrow">Select Game</div>
+    <h1>Analytical Portal</h1>
+    <p class="subtitle">Access advanced statistical trackers, grid markers, and co-occurrence insights to analyze lottery patterns.</p>
+  </header>
+
+  <div class="grid">
+    <!-- EuroJackpot Card -->
+    <a href="eurojackpot/login.html" class="card active">
+      <div class="card-icon">🇪🇺</div>
+      <h2>EuroJackpot</h2>
+      <p>Analyze main numbers, Euro numbers, odd/even distributions, grid positions, and deep co-occurrence data.</p>
+      <div class="card-footer">
+        <span>Access Tools</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Placeholder Card 1 -->
+    <a href="#" class="card disabled">
+      <div class="card-icon">🇺🇸</div>
+      <h2>Mega Millions</h2>
+      <p>Advanced trackers for Mega Millions are currently under development. Check back soon for updates.</p>
+      <div class="card-footer">
+        <span class="badge">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- Placeholder Card 2 -->
+    <a href="#" class="card disabled">
+      <div class="card-icon">🎰</div>
+      <h2>Powerball</h2>
+      <p>Powerball analytics and statistical grids will be added in the next major update.</p>
+      <div class="card-footer">
+        <span class="badge">Coming Soon</span>
+      </div>
+    </a>
+  </div>
+
+</body>
+</html>

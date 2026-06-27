@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0d14">
+<title>EuroJackpot Premium Access</title>
+<style>
+  :root{--bg:#0b0d14;--panel:#141826;--panel2:#1d2336;--line:#2a3147;
+    --txt:#eef1f8;--dim:#7a85a3;--acc:#ffb52e;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  html{-webkit-text-size-adjust:100%;}
+  body{background:var(--bg);color:var(--txt);font-family:'SF Mono',ui-monospace,'Roboto Mono',Menlo,monospace;
+    padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    line-height:1.4;max-width:400px;margin:0 auto;overscroll-behavior:none;
+    display: flex; flex-direction: column; justify-content: center; min-height: 90vh;}
+  
+  .logo {text-align: center; margin-bottom: 30px;}
+  .logo span {font-size: 48px; display: block; margin-bottom: 10px;}
+  h1{font-size:clamp(22px,6vw,26px);font-weight:800;letter-spacing:-0.4px;margin:5px 0 4px; text-align: center; color: var(--acc);}
+  .sub{font-size:12px;color:var(--dim); text-align: center; margin-bottom: 30px;}
+  
+  .login-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+
+  .input-group {margin-bottom: 20px;}
+  label {display: block; font-size: 11px; font-weight: 700; color: var(--dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;}
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--txt);
+    padding: 14px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus {border-color: var(--acc);}
+  
+  button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg,#ffb52e,#f0a020);
+    color: #1a1000;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  button:active {transform: scale(0.96);}
+  button:disabled {opacity: 0.5; cursor: not-allowed;}
+
+  .error {
+    color: #ff4d6d;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 14px;
+    font-weight: 700;
+    min-height: 18px;
+  }
+
+  .nav-back {
+    display: block;
+    text-align: center;
+    margin-top: 24px;
+    color: var(--dim);
+    font-size: 12px;
+    text-decoration: none;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+  
+  <div class="logo">
+    <span>💎</span>
+    <h1>Premium Access</h1>
+  </div>
+  <div class="sub">Enter your Coupon Code to unlock all EuroJackpot tracking tools.</div>
+
+  <div class="login-card">
+    <div class="input-group">
+      <label>Coupon Code</label>
+      <input type="text" id="coupon" placeholder="EUR-XXXX-XXXX" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    </div>
+    <button id="submitBtn" onclick="verifyCoupon()">Unlock Access</button>
+    <div id="errorMsg" class="error"></div>
+  </div>
+
+  <a href="../index.html" class="nav-back">← Back to Portal</a>
+
+  <script>
+    // Auto-login if we already have valid session tokens
+    if (localStorage.getItem('couponCode') && localStorage.getItem('sessionToken')) {
+      // We could blindly redirect, but it's safer to let the user see the login page if they navigated here manually,
+      // OR we just auto-redirect. Let's auto-redirect.
+      window.location.href = 'index.html';
+    }
+
+    async function verifyCoupon() {
+      const codeInput = document.getElementById('coupon');
+      const btn = document.getElementById('submitBtn');
+      const err = document.getElementById('errorMsg');
+      
+      const code = codeInput.value.trim().toUpperCase();
+      if (!code) {
+        err.textContent = 'Please enter a coupon code.';
+        return;
+      }
+
+      err.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Verifying...';
+
+      try {
+        const res = await fetch('/api/verify-coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ couponCode: code })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          // Success! Save tokens and redirect
+          localStorage.setItem('couponCode', code);
+          localStorage.setItem('sessionToken', data.sessionToken);
+          window.location.href = 'index.html';
+        } else {
+          err.textContent = data.error || 'Invalid coupon code.';
+          btn.disabled = false;
+          btn.textContent = 'Unlock Access';
+        }
+      } catch (e) {
+        err.textContent = 'Network error. Please try again.';
+        btn.disabled = false;
+        btn.textContent = 'Unlock Access';
+      }
+    }
+  </script>
+</body>
+</html>

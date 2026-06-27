@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0d14">
+<title>EuroJackpot Euro Number Tracker</title>
+<style>
+  :root{
+    --bg:#0b0d14; --panel:#141826; --panel2:#1d2336; --line:#2a3147;
+    --txt:#eef1f8; --dim:#7a85a3; --sel:#9b6dff; --co:#ff4d6d; --gold:#ffc24d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  html{-webkit-text-size-adjust:100%;}
+  body{padding-bottom:90px;background:var(--bg);color:var(--txt);
+    font-family:'SF Mono',ui-monospace,'Roboto Mono',Menlo,monospace;
+    padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    line-height:1.4;max-width:560px;margin:0 auto;overscroll-behavior:none;}
+  .eyebrow{font-size:9px;letter-spacing:3px;font-weight:700;color:var(--sel);text-transform:uppercase;}
+  h1{font-size:clamp(19px,6vw,22px);font-weight:800;letter-spacing:-0.4px;margin:5px 0 4px;}
+  .sub{font-size:11px;color:var(--dim);}
+  .statwrap{position:sticky;top:0;z-index:10;padding:10px 0 8px;
+    background:linear-gradient(180deg,var(--bg) 70%,rgba(11,13,20,0));}
+  .statline{padding:11px 13px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;font-size:12px;min-height:46px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .statline b{color:var(--sel);} .statline .co{color:var(--gold);font-weight:700;}
+  .clearbtn{margin-top:8px;width:100%;padding:11px;border:1px solid rgba(255,77,109,.3);background:var(--panel);
+    color:var(--co);border-radius:10px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  .clearbtn:active{transform:scale(.98);}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(8px,2.4vw,12px);}
+  .cell{position:relative;aspect-ratio:1;border-radius:50%;border:1px solid var(--line);
+    background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .08s, background .15s, border-color .15s;user-select:none;}
+  .cell:active{transform:scale(.91);}
+  .cell .n{font-size:clamp(20px,6vw,26px);font-weight:800;line-height:1;}
+  .cell .c{font-size:clamp(8px,2.4vw,10px);color:var(--dim);margin-top:4px;height:11px;line-height:1;}
+  .cell.sel{background:radial-gradient(circle at 50% 35%,#b08cff,#7c4dff);border-color:#b08cff;color:#fff;
+    box-shadow:0 0 18px rgba(155,109,255,.5);}
+  .cell.sel .c{color:rgba(255,255,255,.8);}
+  .cell.h0{opacity:.3;}
+  .cell.h1{background:rgba(255,194,77,.14);}
+  .cell.h2{background:rgba(255,194,77,.30);}
+  .cell.h3{background:rgba(255,194,77,.5);border-color:rgba(255,194,77,.5);color:#1a1000;}
+  .cell.h4{background:rgba(255,194,77,.78);border-color:var(--gold);color:#1a1000;}
+  .cell.h3 .c,.cell.h4 .c{color:#5a3d00;}
+
+  .section-title{font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;margin:20px 4px 8px;text-transform:uppercase;}
+  .dl{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 12px;}
+  .drow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #161b2a;font-size:13px;}
+  .drow:last-child{border:none;}
+  .drow .dt{color:var(--dim);font-size:11px;min-width:82px;font-variant-numeric:tabular-nums;}
+  .eball{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;background:var(--panel2);color:var(--txt);border:1px solid var(--line);}
+  .eball.on{background:radial-gradient(circle at 50% 35%,#ffd87a,#f0a020);color:#1a1000;border-color:#ffd87a;}
+  .hint{font-size:10px;color:var(--dim);margin-top:16px;line-height:1.6;padding:11px;background:var(--panel);border-radius:9px;border:1px solid var(--line);}
+  .hint b{color:var(--txt);}
+  .foot{margin-top:18px;font-size:9px;color:var(--dim);text-align:center;line-height:1.5;}
+  .navlink{display:flex;gap:5px;margin-top:18px;flex-wrap:wrap;}
+  .navlink a{flex:1;text-align:center;padding:11px 1px;border-radius:9px;border:1px solid var(--line);
+    text-decoration:none;font-size:12px;font-weight:700;transition:transform .08s;}
+  .navlink a:active{transform:scale(.98);}
+  .navlink a.active{background:var(--panel2);color:var(--sel);border-color:var(--sel);}
+  .navlink a.alt{background:var(--panel);color:var(--dim);}
+  .navlink a.alt .ic{color:#ff4d6d;}
+
+  /* New Premium Bottom Nav */
+  /* New Premium Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 24, 38, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+    z-index: 1000;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #7a85a3;
+    font-size: 9px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    gap: 4px;
+    min-width: 44px;
+  }
+  .nav-item .icon {
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+  .nav-item:active {
+    transform: scale(0.92);
+  }
+  .nav-item.active {
+    color: #ffb52e;
+  }
+  .nav-item.active .icon {
+    background: rgba(255, 181, 46, 0.15);
+    color: #ffb52e;
+    box-shadow: 0 0 15px rgba(255, 181, 46, 0.1);
+  }
+
+
+  .sin-hint {
+    background: rgba(255, 181, 46, 0.08);
+    border: 1px solid rgba(255, 181, 46, 0.2);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 24px 0 30px;
+    font-size: 12px;
+    color: #eef1f8;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .sin-hint b {
+    color: #ffb52e;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+</style>
+</head>
+<body>
+  <div class="eyebrow">EuroJackpot · Euro Numbers</div>
+  <h1>Euro Tracker</h1>
+  <div class="sub">Tap a Euro number (1–12) to see its draws &amp; partners.</div>
+
+  <div class="statwrap">
+    <div class="statline" id="stat">Tap a Euro number to start.</div>
+    <button class="clearbtn" id="clearbtn" onclick="clearAll()" style="display:none">Clear all</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="section-title" id="dltitle" style="display:none">Draws with your selection</div>
+  <div class="dl" id="dl" style="display:none"></div>
+
+  <div class="hint">
+    <b>How it works:</b> tap a Euro number — every draw it appeared in shows below with its date, and the other Euro number it was paired with lights up gold (brighter = more often together). Tap a 2nd to see only draws with both. Euro data covers the most recent draws on record.
+  </div>
+  
+
+  
+  
+  
+  <div class="sin-hint">
+    <b>මේ Tool එකෙන් වෙන්නේ කුමක්ද?</b>
+    මෙම ටූල් එක මගින් යුරෝ අංක 1 සිට 12 දක්වා ඔබ තෝරන අංක සමග වැඩිපුරම දිනා ඇති අනෙකුත් යුරෝ අංක පෙන්වයි. අංකයක් මත Click කර බලන්න.
+  </div>
+  <div class="bottom-nav">
+    <a href="../index.html" class="nav-item">
+      <span class="icon">🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="index.html" class="nav-item ">
+      <span class="icon">🔢</span>
+      <span>Main</span>
+    </a>
+    <a href="euro.html" class="nav-item active">
+      <span class="icon">🇪🇺</span>
+      <span>Euro</span>
+    </a>
+    <a href="grid.html" class="nav-item ">
+      <span class="icon">⬜</span>
+      <span>Grid</span>
+    </a>
+    <a href="position.html" class="nav-item ">
+      <span class="icon">📍</span>
+      <span>Pos</span>
+    </a>
+    <a href="oddeven.html" class="nav-item ">
+      <span class="icon">⚖️</span>
+      <span>O/E</span>
+    </a>
+    <a href="total.html" class="nav-item ">
+      <span class="icon">📊</span>
+      <span>Total</span>
+    </a>
+  </div>
+  
+  <div class="foot" id="foot"></div>
+
+<script type="module">
+    const res = await fetch('/api/draws', {
+    headers: {
+      'x-coupon-code': localStorage.getItem('couponCode') || '',
+      'x-session-token': localStorage.getItem('sessionToken') || ''
+    }
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('couponCode');
+    localStorage.removeItem('sessionToken');
+    window.location.href = 'login.html';
+  }
+  const EUROJACKPOT_DATA = await res.json();
+  const DRAWS_MAIN_ONLY = EUROJACKPOT_DATA.map(x => x.n);
+  const DRAWS = EUROJACKPOT_DATA.map(x => ({ d: x.d, n: x.n }));
+  const EURO = EUROJACKPOT_DATA.filter(x => x.e).map(x => ({ d: x.d, e: x.e }));
+
+let selected = [];
+
+const grid=document.getElementById('grid');
+const cells={};
+for(let n=1;n<=12;n++){
+  const c=document.createElement('div');
+  c.className='cell';
+  c.innerHTML=`<span class="n">${n}</span><span class="c"></span>`;
+  c.onclick=()=>toggle(n);
+  grid.appendChild(c);
+  cells[n]=c;
+}
+document.getElementById('foot').textContent=`${EURO.length} draws with Euro data · ${EURO[EURO.length-1].d} → ${EURO[0].d}`;
+
+function toggle(n){
+  const i=selected.indexOf(n);
+  if(i>=0) selected.splice(i,1); else selected.push(n);
+  render();
+}
+function clearAll(){ selected=[]; render(); }
+
+function render(){
+  let matching=EURO;
+  if(selected.length) matching=EURO.filter(d=>selected.every(s=>d.e.includes(s)));
+  const co={}; for(let n=1;n<=12;n++) co[n]=0;
+  if(selected.length) for(const d of matching) for(const n of d.e) if(!selected.includes(n)) co[n]++;
+  const maxco=Math.max(1,...Object.values(co));
+
+  for(let n=1;n<=12;n++){
+    const cell=cells[n], cspan=cell.querySelector('.c');
+    cell.className='cell';
+    if(selected.includes(n)){ cell.classList.add('sel'); cspan.textContent='✓'; }
+    else if(selected.length){
+      const v=co[n]; let h;
+      if(v===0)h=0; else {const r=v/maxco; h=r>=.8?4:r>=.55?3:r>=.3?2:1;}
+      cell.classList.add('h'+h);
+      cspan.textContent=v>0?v:'·';
+    } else cspan.textContent='';
+  }
+
+  const stat=document.getElementById('stat');
+  document.getElementById('clearbtn').style.display=selected.length?'block':'none';
+  if(!selected.length){
+    stat.innerHTML='Tap a Euro number to start.';
+  } else {
+    const ranked=[...Array(13).keys()].filter(n=>n>=1&&!selected.includes(n)&&co[n]>0).sort((a,b)=>co[b]-co[a]);
+    const top=ranked.slice(0,4).map(n=>`<span class="co">${n}</span>(${co[n]})`).join('  ');
+    stat.innerHTML=`Selected <b>${selected.slice().sort((a,b)=>a-b).join(', ')}</b> · in <b>${matching.length}</b> of ${EURO.length} draws.`+
+      (ranked.length?`<br>Top partners: ${top}`:'<br>No shared partner in these draws.');
+  }
+
+  const dl=document.getElementById('dl'), dlt=document.getElementById('dltitle');
+  if(selected.length){
+    dl.style.display='block'; dlt.style.display='block';
+    dlt.textContent=`Draws with your selection (${matching.length})`;
+    dl.innerHTML=matching.map(d=>{
+      const balls=d.e.map(x=>`<span class="eball ${selected.includes(x)?'on':''}">${x}</span>`).join('');
+      return `<div class="drow"><span class="dt">${d.d}</span>${balls}</div>`;
+    }).join('') || '<div class="drow"><span class="dt">none</span></div>';
+  } else { dl.style.display='none'; dlt.style.display='none'; }
+}
+render();
+
+window.clearAll = clearAll;
+</script>
+</body>
+</html>

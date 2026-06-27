@@ -1,0 +1,15 @@
+# Environment variables
+.env
+
+# Dependencies
+node_modules/
+
+# Local database files (these are now in MongoDB)
+data.json
+coupons.json
+
+# Vercel and editor directories
+.vercel/
+.vscode/
+.idea/
+.DS_Store

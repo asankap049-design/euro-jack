@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0d14">
+<title>EuroJackpot Total Sum Tracker</title>
+<style>
+  :root{--bg:#0b0d14;--panel:#141826;--panel2:#1d2336;--line:#2a3147;
+    --txt:#eef1f8;--dim:#7a85a3;--odd:#ff9f1c;--even:#2ec4ff;--acc:#ffb52e;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  html{-webkit-text-size-adjust:100%;}
+  body{padding-bottom:90px;background:var(--bg);color:var(--txt);font-family:'SF Mono',ui-monospace,'Roboto Mono',Menlo,monospace;
+    padding:calc(14px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    line-height:1.4;max-width:560px;margin:0 auto;overscroll-behavior:none;}
+  .eyebrow{font-size:9px;letter-spacing:3px;font-weight:700;color:var(--acc);text-transform:uppercase;}
+  h1{font-size:clamp(19px,6vw,22px);font-weight:800;letter-spacing:-0.4px;margin:5px 0 4px;}
+  .sub{font-size:11px;color:var(--dim);}
+  .selector{display:flex;gap:6px;margin:14px 0 10px;}
+  .selector button{flex:1;padding:9px 2px;border:1px solid var(--line);background:var(--panel);color:var(--dim);
+    border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  .selector button.active{background:linear-gradient(135deg,#ffb52e,#f0a020);color:#1a1000;border-color:transparent;}
+
+  .section-title{font-size:10px;letter-spacing:1.5px;color:var(--dim);font-weight:700;margin:16px 4px 8px;text-transform:uppercase;}
+  .idea{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 13px;font-size:12px;line-height:1.6;}
+  .idea b{color:var(--acc);} 
+  .splitbars{margin-top:10px;}
+  .sbar{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;}
+  .sbar .lb{min-width:64px;font-variant-numeric:tabular-nums; color: var(--dim); font-weight: 700;}
+  .sbar .track{flex:1;height:13px;border-radius:4px;background:var(--panel2);overflow:hidden;}
+  .sbar .fill{height:100%;background:linear-gradient(90deg,#ffb84d,#e07d00);border-radius:4px;}
+  .sbar .vv{min-width:48px;text-align:right;color:var(--dim);font-size:10px;}
+  .sbar.top .lb{color:#fff;} .sbar.top .vv{color:var(--acc);} .sbar.top .fill{background:linear-gradient(90deg,#36d399,#1f8a5e);}
+
+  .draws{display:flex;flex-direction:column;gap:8px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+  .date{font-size:11px;font-weight:800;color:var(--dim);min-width:74px;font-variant-numeric:tabular-nums;}
+  .balls{display:flex;gap:5px;flex:1;}
+  .ball{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:var(--panel2);color:var(--dim);border:1px solid var(--line);}
+  .split{font-size:14px;font-weight:800;min-width:44px;text-align:right; color: var(--acc);}
+
+  .foot{margin-top:14px;font-size:9px;color:var(--dim);text-align:center;line-height:1.5;}
+
+
+  .sin-hint {
+    background: rgba(255, 181, 46, 0.08);
+    border: 1px solid rgba(255, 181, 46, 0.2);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 24px 0 30px;
+    font-size: 12px;
+    color: #eef1f8;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .sin-hint b {
+    color: #ffb52e;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  /* New Premium Bottom Nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 24, 38, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+    z-index: 1000;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #7a85a3;
+    font-size: 9px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    gap: 4px;
+    min-width: 44px;
+  }
+  .nav-item .icon {
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+  .nav-item:active {
+    transform: scale(0.92);
+  }
+  .nav-item.active {
+    color: #ffb52e;
+  }
+  .nav-item.active .icon {
+    background: rgba(255, 181, 46, 0.15);
+    color: #ffb52e;
+    box-shadow: 0 0 15px rgba(255, 181, 46, 0.1);
+  }
+</style>
+</head>
+<body>
+  <div class="eyebrow">EuroJackpot · Total Sum</div>
+  <h1>Results Total</h1>
+  <div class="sub">Tracks the sum of the 5 main numbers (Range: 15 to 240).</div>
+
+  <div class="selector" id="sel"></div>
+
+  <div class="section-title">Sum Ranges &amp; Frequency</div>
+  <div class="idea" id="idea"></div>
+
+  <div class="section-title" id="drawstitle">Every result</div>
+  <div class="draws" id="draws"></div>
+
+  
+  
+  <div class="sin-hint">
+    <b>මේ Tool එකෙන් වෙන්නේ කුමක්ද?</b>
+    මෙමගින් දිනුම් වාරයක ප්‍රධාන අංක 5 හි එකතුව (Total Sum) විශ්ලේෂණය කරයි. එකතුව 15 සිට 240 දක්වා විය හැකි අතර, වැඩිපුරම දිනන එකතු පරාසයන් මින් බලාගත හැක.
+  </div>
+  <div class="bottom-nav">
+    <a href="../index.html" class="nav-item">
+      <span class="icon">🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="index.html" class="nav-item ">
+      <span class="icon">🔢</span>
+      <span>Main</span>
+    </a>
+    <a href="euro.html" class="nav-item ">
+      <span class="icon">🇪🇺</span>
+      <span>Euro</span>
+    </a>
+    <a href="grid.html" class="nav-item ">
+      <span class="icon">⬜</span>
+      <span>Grid</span>
+    </a>
+    <a href="position.html" class="nav-item ">
+      <span class="icon">📍</span>
+      <span>Pos</span>
+    </a>
+    <a href="oddeven.html" class="nav-item ">
+      <span class="icon">⚖️</span>
+      <span>O/E</span>
+    </a>
+    <a href="total.html" class="nav-item active">
+      <span class="icon">📊</span>
+      <span>Total</span>
+    </a>
+  </div>
+  
+  <div class="foot" id="foot"></div>
+
+<script type="module">
+    const res = await fetch('/api/draws', {
+    headers: {
+      'x-coupon-code': localStorage.getItem('couponCode') || '',
+      'x-session-token': localStorage.getItem('sessionToken') || ''
+    }
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('couponCode');
+    localStorage.removeItem('sessionToken');
+    window.location.href = 'login.html';
+  }
+  const EUROJACKPOT_DATA = await res.json();
+  const DRAWS = EUROJACKPOT_DATA.map(x => ({ d: x.d, n: x.n }));
+
+const windows=[10,20,30,50,100,DRAWS.length];
+const labels={10:'10',20:'20',30:'30',50:'50',100:'100',[DRAWS.length]:'All'};
+let active=20;
+
+const sel=document.getElementById('sel');
+windows.forEach(w=>{const b=document.createElement('button');b.textContent=labels[w];b.dataset.w=w;
+  if(w===active)b.classList.add('active');
+  b.onclick=()=>{active=w;[...sel.children].forEach(c=>c.classList.toggle('active',+c.dataset.w===w));render();};
+  sel.appendChild(b);});
+
+function render(){
+  const win=DRAWS.slice(0,active);
+  
+  const dist = {
+    '15 - 50': 0,
+    '51 - 100': 0,
+    '101 - 150': 0,
+    '151 - 200': 0,
+    '201 - 240': 0
+  };
+
+  const getBucket = (sum) => {
+    if (sum <= 50) return '15 - 50';
+    if (sum <= 100) return '51 - 100';
+    if (sum <= 150) return '101 - 150';
+    if (sum <= 200) return '151 - 200';
+    return '201 - 240';
+  };
+
+  let totalSum=0;
+  for(const d of win){ 
+    const sum = d.n.reduce((a, b) => a + b, 0);
+    dist[getBucket(sum)]++;
+    totalSum += sum;
+  }
+  
+  const maxc=Math.max(1,...Object.values(dist));
+  const topBucket = Object.entries(dist).sort((a,b)=>b[1]-a[1])[0][0];
+
+  // idea panel
+  let bars='';
+  const keys = ['201 - 240', '151 - 200', '101 - 150', '51 - 100', '15 - 50'];
+  for(const k of keys){
+    const c=dist[k], pct=(c/win.length*100).toFixed(0);
+    const top = k===topBucket?'top':'';
+    bars+=`<div class="sbar ${top}"><span class="lb">${k}</span>`+
+      `<div class="track"><div class="fill" style="width:${c/maxc*100}%"></div></div><span class="vv">${c} (${pct}%)</span></div>`;
+  }
+  const avgSum = (totalSum/win.length).toFixed(1);
+
+  document.getElementById('idea').innerHTML=
+    `In the last <b>${win.length}</b> draws, the most common sum range is <b>${topBucket}</b> `+
+    `(${(dist[topBucket]/win.length*100).toFixed(0)}% of draws).<br>`+
+    `Average sum across these draws: <b>${avgSum}</b>.`+
+    `<div class="splitbars">${bars}</div>`+
+    `<div style="font-size:10px;color:#7a85a3;margin-top:8px;line-height:1.5">Note: The theoretical center is ~127.5. Extremes (very low or very high totals) naturally happen less often because there are fewer ways to add up to them.</div>`;
+
+  // per-draw
+  document.getElementById('drawstitle').textContent=`Every result (${win.length})`;
+  document.getElementById('draws').innerHTML=win.map(d=>{
+    const sorted=d.n.slice().sort((a,b)=>a-b);
+    const sum = sorted.reduce((a, b) => a + b, 0);
+    const balls=sorted.map(n=>`<span class="ball">${n}</span>`).join('');
+    return `<div class="card"><span class="date">${d.d}</span><div class="balls">${balls}</div>`+
+      `<span class="split">${sum}</span></div>`;
+  }).join('');
+}
+document.getElementById('foot').textContent=`${DRAWS.length} draws · ${DRAWS[DRAWS.length-1].d} → ${DRAWS[0].d}`;
+render();
+</script>
+</body>
+</html>
