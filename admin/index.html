@@ -300,7 +300,8 @@
           sessionStorage.setItem('adminToken', adminToken);
           showDashboard();
         } else {
-          msgEl.textContent = "Incorrect Admin Password!";
+          const text = await res.text();
+          msgEl.textContent = "Error " + res.status + ": " + text;
           msgEl.className = "message error";
         }
       } catch (e) {
