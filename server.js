@@ -130,7 +130,7 @@ app.get('/api/admin/coupons', async (req, res) => {
     const coupons = await Coupon.find().sort({ createdAt: -1 }).lean();
     res.json(coupons);
   } catch (e) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', details: e.message, hasEnv: !!process.env.MONGODB_URI });
   }
 });
 
