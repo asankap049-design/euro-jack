@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
+const { GoogleGenAI } = require('@google/genai');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -159,6 +161,58 @@ app.post('/api/admin/delete-coupon', async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// -----------------------------------------
+// AI Assistant Endpoint
+// -----------------------------------------
+const toolKnowledge = {
+  'index.html': "TOOL: Main Number Tracker (Co-Occurrence).\nPURPOSE: Shows which numbers historically appear together in the same draw as the user's selected numbers. 'Heat' or 'Co-occurrence count' means how many times that specific number appeared in draws containing ALL the user's selected numbers.",
+  'euro.html': "TOOL: Euro Numbers Analytics.\nPURPOSE: Similar to the main tracker but focuses exclusively on the 2 Euro numbers (1-12) and their combinations.",
+  'grid.html': "TOOL: Visual Grid Pattern.\nPURPOSE: Plots historical drawn numbers on a 5x10 visual grid. Helps users see physical patterns (like diagonals, clusters, or shapes) that appeared in historical draws.",
+  'position.html': "TOOL: Row/Line Position Matrix.\nPURPOSE: Analyzes rows (R1-R10) and lines (L1-L5) on the betting slip. Shows which specific rows or lines have generated hits in past draws, helping find row/column trends.",
+  'oddeven.html': "TOOL: Odd / Even Distribution.\nPURPOSE: Shows the historical ratio of Odd vs Even numbers drawn (e.g., 3 Odd / 2 Even). Helps predict the parity split of the next draw.",
+  'total.html': "TOOL: Sum Totals.\nPURPOSE: Analyzes the mathematical sum of the 5 main numbers (e.g., 5+10+20+30+40 = 105) and groups them into ranges. Shows which sum ranges are most common."
+};
+
+app.post('/api/chat', authenticateCoupon, async (req, res) => {
+  const { message, context, pageName } = req.body;
+  if (!message) return res.status(400).json({ error: 'Message required' });
+  
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Gemini API Key not configured' });
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: apiKey });
+    
+    const specificInstructions = toolKnowledge[pageName] || "TOOL: General Eurojackpot Analysis.\nPURPOSE: General data analysis.";
+
+    const prompt = `You are a helpful AI assistant integrated into a Eurojackpot analysis tool.
+You speak both English and Sinhala (if the user asks in Sinhala).
+
+${specificInstructions}
+
+Here is the current context of what the user is looking at on their screen:
+---
+${context || 'No context available.'}
+---
+
+The user asks: "${message}"
+
+Please provide a helpful, concise answer based on the context and tool purpose. If the context doesn't have the answer, explain what you see.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    res.json({ reply: response.text });
+  } catch (error) {
+    console.error('Gemini API Error:', error);
+    res.status(500).json({ error: 'Failed to generate response' });
   }
 });
 

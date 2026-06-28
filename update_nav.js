@@ -89,6 +89,8 @@ function getNavHtml(activeFile) {
       <span>Total</span>
     </a>
   </div>
+  <link rel="stylesheet" href="chat.css">
+  <script src="chat.js" defer></script>
   `;
 }
 
